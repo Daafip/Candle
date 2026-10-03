@@ -30,6 +30,9 @@ android {
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".swipe"
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
