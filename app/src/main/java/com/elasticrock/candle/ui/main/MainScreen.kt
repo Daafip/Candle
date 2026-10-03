@@ -3,6 +3,7 @@ package com.elasticrock.candle.ui.main
 import android.app.Activity
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,10 +39,13 @@ import androidx.compose.material3.rememberBottomSheetScaffoldState
 import androidx.compose.material3.rememberStandardBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -51,6 +55,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.elasticrock.candle.R
 import com.elasticrock.candle.ui.components.PreferenceSlider
 import com.elasticrock.candle.ui.components.SavedColor
+import com.elasticrock.candle.util.applySwipe
 import com.elasticrock.candle.util.maxBrightness
 import com.elasticrock.candle.util.minBrightness
 import com.elasticrock.candle.util.setBrightness
@@ -78,6 +83,9 @@ fun MainScreen(
     val allowOnLockScreen = state.value.allowOnLockScreen
 
     val isLocked = state.value.isLocked
+
+    val swipeEnabled = !isLocked
+    val latestBrightness by rememberUpdatedState(brightness)
 
     val view = LocalView.current
     val window = (view.context as Activity).window
@@ -249,7 +257,21 @@ fun MainScreen(
         },
         content = {
             Surface(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .pointerInput(swipeEnabled) {
+                        if (!swipeEnabled) return@pointerInput
+                        var value = 0f
+                        detectVerticalDragGestures(
+                            onDragStart = { value = latestBrightness },
+                            onDragEnd = { viewModel.onBrightnessSave() },
+                            onDragCancel = { viewModel.onBrightnessSave() }
+                        ) { change, dy ->
+                            change.consume()
+                            value = applySwipe(value, dy, size.height, minBrightness..maxBrightness)
+                            viewModel.onBrightnessChange(value)
+                        }
+                    },
                 color = Color.hsl(hue = selectedHue, saturation = 1f, lightness = selectedLightness)
             ) {
                 Column(
