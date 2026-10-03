@@ -94,7 +94,7 @@ fun MainScreen(
 
     val isLocked = state.value.isLocked
 
-    val swipeEnabled = !isLocked
+    val swipeEnabled = state.value.swipeToAdjustBrightness && !isLocked
     val latestBrightness by rememberUpdatedState(brightness)
     val haptic = LocalHapticFeedback.current
     var isSwiping by remember { mutableStateOf(false) }
